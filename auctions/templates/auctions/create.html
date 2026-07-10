@@ -1,0 +1,33 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+    {% if user.is_authenticated %}
+    <h2>Create Listing</h2>
+    <form method="post" action="{% url 'create' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <input type="text" class="form-control" autofocus placeholder="'title" name="title">
+        </div>
+        <div class="form-group">
+            <textarea type="text" class="form-control" autofocus placeholder="description" name="description"></textarea>
+        </div>
+        <div>
+            <select name="Category">
+                {% for Category in Categories %}
+                <option value="{{Category.id}}">{{Category.name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+             <input type="url" placeholder="https://example.com/image.jpg" name="image_URL">
+        </div>
+        <div class="form-group">
+             <input type="number" step="1"  min="0" name="starting_bid">
+        </div>
+         <input class="btn btn-primary" type="submit" value="create">
+
+    </form>
+    {% else %}
+    <h1>you need to sign in to access this page</h1>
+    {% endif %}
+{% endblock %}
