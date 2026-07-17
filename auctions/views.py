@@ -9,7 +9,9 @@ from .models import User
 
 
 def index(request):
-    return render(request, "auctions/index.html")
+    return render(request, "auctions/index.html",{
+        "Listings" : Listing.objects.all()
+    })
 
 
 def login_view(request):
@@ -87,4 +89,41 @@ def create_listing(request):
         )
         return redirect("index")
 
+def listing(request, listing_id):
+    listing = Listing.objects.get(id = listing_id)
+    watchlisted = Watchlist.objects.filter(owner= request.user, listing = listing).exists()
+    if request.method == "GET":
+        if request.user.is_authenticated:  
+            return render(request, "auctions/listing.html",{
+            "comments" : Comments.objects.all(),
+            "listing" : listing,
+            "watchlisted" : watchlisted
+        } )
+    elif request.method == "POST":
+        comment = request.POST.get("comment")
+        if "placed_bid" in request.POST : 
+            placed_bid = request.POST.get("placed_bid")
+            Bids.objects.create(
+                listing = listing,
+                bidder = request.user,
+                amount = placed_bid                             
+            )
+        elif "comment" in request.POST:
+            Comments.objects.create(
+                listing = listing,
+                owner = request.user,
+                content = comment,
+        )
+        elif "toggle_watchlist" in request.POST:
+            if watchlisted :
+                Watchlist.objects.filter(owner= request.user, listing= listing).delete()
+            else:
+                Watchlist.objects.create(owner = request.user, listing=listing)
+        return redirect("listing", listing_id = listing_id)
     
+
+def watchlist(request):
+    watch_list = [entry.listing for entry in Watchlist.objects.filter(owner=request.user)]
+    return render(request, "auctions/watchlist.html",{
+        "watch_list" : watch_list 
+    })

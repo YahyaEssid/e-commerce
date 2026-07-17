@@ -23,8 +23,9 @@ class Listing(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     def __str__(self):
         return f"{self.title} {self.is_active}"
-
-
+    def current_price(self):
+        highest_bid = self.bids.order_by('-amount').first()
+        return highest_bid.amount if highest_bid else self.starting_bid
 class Bids(models.Model):
     listing = models.ForeignKey(Listing, on_delete=models.CASCADE, related_name="bids")
     bidder = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bids")
