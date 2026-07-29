@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from .models import*
 
@@ -75,7 +75,6 @@ def create_listing(request):
         title = request.POST.get("title")
         description= request.POST.get("description")
         image_URL = request.POST.get("image_URL")
-        category_id= Category.objects.get(id = request.POST.get("Category"))
         owner = request.user
         starting_bid = request.POST.get("starting_bid")
 
@@ -85,19 +84,22 @@ def create_listing(request):
             owner=owner,
             image_url = image_URL,
             starting_bid = starting_bid,
-            category_id = category_id
+            category = Category.objects.get(id = request.POST.get("Category"))
         )
         return redirect("index")
 
 def listing(request, listing_id):
     listing = Listing.objects.get(id = listing_id)
     watchlisted = Watchlist.objects.filter(owner= request.user, listing = listing).exists()
+    highest_bid = listing.bids.order_by('-amount').first()
+    winner = highest_bid.bidder
     if request.method == "GET":
         if request.user.is_authenticated:  
             return render(request, "auctions/listing.html",{
             "comments" : Comments.objects.all(),
             "listing" : listing,
-            "watchlisted" : watchlisted
+            "watchlisted" : watchlisted,
+            "winner" : winner
         } )
     elif request.method == "POST":
         comment = request.POST.get("comment")
@@ -119,6 +121,10 @@ def listing(request, listing_id):
                 Watchlist.objects.filter(owner= request.user, listing= listing).delete()
             else:
                 Watchlist.objects.create(owner = request.user, listing=listing)
+        elif "close_auction" in request.POST:
+            if request.user == listing.owner and listing.is_active:
+                listing.is_active = False
+                listing.save() 
         return redirect("listing", listing_id = listing_id)
     
 
@@ -126,4 +132,17 @@ def watchlist(request):
     watch_list = [entry.listing for entry in Watchlist.objects.filter(owner=request.user)]
     return render(request, "auctions/watchlist.html",{
         "watch_list" : watch_list 
+    })
+
+
+def categories(request):
+    categories = Category.objects.all()
+    return render(request, "auctions/categories.html", {
+        "categoryList" : categories
+    })
+
+def category(request, category_id):
+    listings = get_object_or_404(Category, id = category_id).listings.filter(is_active = True)
+    return render(request, "auctions/categoryListings.html",{
+        "Listings" : listings
     })

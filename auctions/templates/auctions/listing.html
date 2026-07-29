@@ -10,12 +10,18 @@
             {% else %}
             <input type="submit" value="Add to Watchlist" name="toggle_watchlist">
             {% endif %}
+            {% if user == listing.owner and listing.is_active %}
+            <input type="submit" value="close Auction" name="close_auction">
+            {% endif %}
+            {% if user == winner and not listing.is_active %}
+            <h1>Congratulations you won the auction</h1>
+            {% endif %}
         </form>
         {% endif %}
         <a><h2>{{listing.title}}</h2></a>
         <h6>{{listing.created_at}}</h6>
         <p>{{listing.description}}</p>
-        <p>{{listing.catergory}}</p>
+        <p>{{listing.category}}</p>
         <h3>{{listing.current_price}}</h3>
         <img src="{{listing.image_url}}">
     </div>
@@ -24,10 +30,15 @@
         <form action="{% url 'listing' listing.id %}" method="post">
             {% csrf_token %} 
             <h5>place your bid:</h5>
+            {% if listing.is_active %}
             <div class="form-group">
              <input type="number" step="1"   name="placed_bid" required min="{{listing.current_price}}">
              <input type="submit" value="submit_bid">
+            {% else %}
+             <input type = "number" disabled>
+             <p>Auction has closed</p>
             </div>
+            {% endif %}
         </form>
     </div>
     <div>
