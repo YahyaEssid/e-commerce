@@ -90,17 +90,18 @@ def create_listing(request):
 
 def listing(request, listing_id):
     listing = Listing.objects.get(id = listing_id)
-    watchlisted = Watchlist.objects.filter(owner= request.user, listing = listing).exists()
+    watchlisted = False
+    if request.user.is_authenticated:
+        watchlisted = Watchlist.objects.filter(owner=request.user, listing=listing).exists()
     highest_bid = listing.bids.order_by('-amount').first()
-    winner = highest_bid.bidder
+    winner = highest_bid.bidder if highest_bid else None
     if request.method == "GET":
-        if request.user.is_authenticated:  
-            return render(request, "auctions/listing.html",{
-            "comments" : Comments.objects.all(),
-            "listing" : listing,
-            "watchlisted" : watchlisted,
-            "winner" : winner
-        } )
+        return render(request, "auctions/listing.html",{
+        "comments" : Comments.objects.all(),
+        "listing" : listing,
+        "watchlisted" : watchlisted,
+        "winner" : winner
+        })
     elif request.method == "POST":
         comment = request.POST.get("comment")
         if "placed_bid" in request.POST : 
